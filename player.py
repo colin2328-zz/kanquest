@@ -1,12 +1,15 @@
+from buildings import *
+
 class Player(object):
     name = ''
     race = None
+    max_population = 0
+    num_population = 0
+    num_mana = 0
     num_units = 0
     num_acres = 0
     num_lumber = 0
     num_gold = 0
-    num_gold_per_turn = 0
-    num_lumber_per_turn = 0
 
     buildings = {}
 
@@ -15,27 +18,33 @@ class Player(object):
     PERCENT_UNITS_SURVIVE = 0.9
     START_GOLD = 10000
     START_LUMBER = 100
+    DEFAULT_POPULATION = 5 * START_ACRES
+    DEFAULT_START_MANA = 100
     DEFAULT_GOLD_PER_TURN = 500
     DEFAULT_LUMBER_PER_TURN = 20
+    START_BUILDINGS = {GoldMine:10, LumberYard:10, Tower:10}
 
     def __init__(self, name, race, num_units):
         self.name = name
         self.race = race
+        self.num_population = self.DEFAULT_POPULATION
+        self.num_mana = self.DEFAULT_START_MANA
         self.num_units = num_units
         self.num_acres = self.START_ACRES
         self.num_lumber = self.START_LUMBER
         self.num_gold = self.START_GOLD
         self.num_gold_per_turn = self.DEFAULT_GOLD_PER_TURN
         self.num_lumber_per_turn = self.DEFAULT_LUMBER_PER_TURN
-        self.buildings = {}
+        self.buildings = self.START_BUILDINGS
 
     def __str__(self):
         return self.name
 
     def print_state(self):
-        print '{}: {} {} {} acres, {} gold, {} lumber, {} buildings'.format(
+        print '{}: {} {} {} acres, {} gold, {} lumber, {} buildings, {} mana, {} population'.format(
             self, self.num_units, self.race.unit.name,
-            self.num_acres, self.num_gold, self.num_lumber, self.buildings)
+            self.num_acres, self.num_gold, self.num_lumber, self.buildings,
+            self.num_mana, self.num_population)
 
     def attack(self, other_player):
         if (
@@ -67,12 +76,21 @@ class Player(object):
         if self.num_gold < quantity*building_type.gold_cost or self.num_lumber < quantity*building_type.lumber_cost:
             print ('{} does not have enough resources to make that purchase.'.format(self))
             return
-
-        if building_type not in self.buildings:
-            self.buildings[building_type] = 0
         self.buildings[building_type] += quantity
+
+    def cast(self, spell, target):
+        if self.num_mana < spell.mana_cost:
+            print ('{} does not have enough mana to cast {}'.format(self), spell)
+            return 
+        self.num_mana -= spell.mana_cost
+        spell.cast(target)
+        print ('{} casts {} on {}').format(self, spell, target)
 
     def take_turn(self):
         """Only called by game.py"""
-        self.num_gold += self.num_gold_per_turn
-        self.num_lumber += self.num_lumber_per_turn
+        max_population = 10 * self.num_acres
+        self.num_gold += GoldMine.GOLD_PER_TURN * self.buildings[GoldMine]
+        self.num_lumber += LumberYard.LUMBER_PER_TURN * self.buildings[LumberYard]
+        self.num_mana += Tower.MANA_PER_TURN * self.buildings[Tower]
+        self.num_population = min(max_population, round(self.num_population * 1.01))
+        

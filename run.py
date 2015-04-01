@@ -2,34 +2,41 @@ from races import Human, Elf
 from player import Player
 from game import Game
 from buildings import GoldMine
+from spells import Fireball
 
-me = Player('Colin', Human, 200)
+colin = Player('Colin', Human, 200)
 hakan = Player('Hakan', Elf, 300)
-game = Game({me, hakan})
+game = Game({colin, hakan})
 
 
 print ('Starting states:')
-me.print_state()
+colin.print_state()
 hakan.print_state()
 
 game.take_turn()
 print ('Hakan attacks Colin:')
-hakan.attack(me)
-me.print_state()
+hakan.attack(colin)
+colin.print_state()
 hakan.print_state()
 
 print ('Colin buys units:')
-me.buy_units(10)
-me.print_state()
+colin.buy_units(10)
+colin.print_state()
 hakan.print_state()
 
 game.take_turn()
 print ('Colin attacks Hakan')
-me.attack(hakan)
-me.print_state()
+colin.attack(hakan)
+colin.print_state()
 hakan.print_state()
 
 game.take_turn()
 print ('Colin buys gold mines')
-me.build(GoldMine, 5)
-me.print_state()
+colin.build(GoldMine, 5)
+colin.print_state()
+
+game.take_turn()
+print ('Colin fireballs Hakan')
+colin.cast(Fireball, hakan)
+colin.print_state()
+hakan.print_state()
