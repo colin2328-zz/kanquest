@@ -5,12 +5,16 @@ class Player(object):
     num_acres = 0
     num_lumber = 0
     num_gold = 0
+    num_gold_per_turn = 0
+    num_lumber_per_turn = 0
 
     START_ACRES = 500
     PERCENT_LAND_TO_TAKE = 0.1
     PERCENT_UNITS_SURVIVE = 0.9
     START_GOLD = 10000
     START_LUMBER = 100
+    DEFAULT_GOLD_PER_TURN = 500
+    DEFAULT_LUMBER_PER_TURN = 20
 
     def __init__(self, name, race, num_units):
         self.name = name
@@ -19,17 +23,16 @@ class Player(object):
         self.num_acres = self.START_ACRES
         self.num_lumber = self.START_LUMBER
         self.num_gold = self.START_GOLD
+        self.num_gold_per_turn = self.DEFAULT_GOLD_PER_TURN
+        self.num_lumber_per_turn = self.DEFAULT_LUMBER_PER_TURN
 
     def __str__(self):
         return self.name
 
     def print_state(self):
         print '{}: {} {} {} acres, {} gold, {} lumber'.format(
-            self, self.num_units, self.race.unit.name, 
+            self, self.num_units, self.race.unit.name,
             self.num_acres, self.num_gold, self.num_lumber)
-
-    def add_units(self, num_units):
-        self.num_units += num_units
 
     def attack(self, other_player):
         if (
@@ -54,3 +57,8 @@ class Player(object):
         else:
             self.num_gold -= num_units*self.race.unit.cost
             self.num_units += num_units
+
+    def take_turn(self):
+        """Only called by game.py"""
+        self.num_gold += self.num_gold_per_turn
+        self.num_lumber += self.num_lumber_per_turn
