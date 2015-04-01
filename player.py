@@ -8,6 +8,8 @@ class Player(object):
     num_gold_per_turn = 0
     num_lumber_per_turn = 0
 
+    buildings = {}
+
     START_ACRES = 500
     PERCENT_LAND_TO_TAKE = 0.1
     PERCENT_UNITS_SURVIVE = 0.9
@@ -25,14 +27,15 @@ class Player(object):
         self.num_gold = self.START_GOLD
         self.num_gold_per_turn = self.DEFAULT_GOLD_PER_TURN
         self.num_lumber_per_turn = self.DEFAULT_LUMBER_PER_TURN
+        self.buildings = {}
 
     def __str__(self):
         return self.name
 
     def print_state(self):
-        print '{}: {} {} {} acres, {} gold, {} lumber'.format(
+        print '{}: {} {} {} acres, {} gold, {} lumber, {} buildings'.format(
             self, self.num_units, self.race.unit.name,
-            self.num_acres, self.num_gold, self.num_lumber)
+            self.num_acres, self.num_gold, self.num_lumber, self.buildings)
 
     def attack(self, other_player):
         if (
@@ -54,9 +57,20 @@ class Player(object):
     def buy_units(self, num_units):
         if self.num_gold < num_units*self.race.unit.cost:
             print ('{} does not have enough gold to make that purchase.'.format(self))
-        else:
-            self.num_gold -= num_units*self.race.unit.cost
-            self.num_units += num_units
+            return
+
+        self.num_gold -= num_units*self.race.unit.cost
+        self.num_units += num_units
+
+    def build(self, building_type, quantity):
+        # check to make sure that we have enough resources
+        if self.num_gold < quantity*building_type.gold_cost or self.num_lumber < quantity*building_type.lumber_cost:
+            print ('{} does not have enough resources to make that purchase.'.format(self))
+            return
+
+        if building_type not in self.buildings:
+            self.buildings[building_type] = 0
+        self.buildings[building_type] += quantity
 
     def take_turn(self):
         """Only called by game.py"""
