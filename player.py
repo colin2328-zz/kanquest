@@ -13,7 +13,7 @@ class Player(object):
 
     buildings = {}
 
-    START_ACRES = 500
+    START_ACRES = 50
     PERCENT_LAND_TO_TAKE = 0.1
     PERCENT_UNITS_SURVIVE = 0.9
     START_GOLD = 10000
@@ -75,6 +75,9 @@ class Player(object):
         # check to make sure that we have enough resources
         if self.num_gold < quantity*building_type.gold_cost or self.num_lumber < quantity*building_type.lumber_cost:
             print ('{} does not have enough resources to make that purchase.'.format(self))
+            return
+        if (sum(self.buildings.values()) + quantity) > self.num_acres:
+            print ('{} does not have enough land to build {} buildings'.format(self, quantity))
             return
         self.buildings[building_type] += quantity
 
