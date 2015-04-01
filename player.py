@@ -1,6 +1,8 @@
 from buildings import *
+import random
 
 class Player(object):
+    """Player attributes """
     name = ''
     race = None
     max_population = 0
@@ -13,6 +15,7 @@ class Player(object):
 
     buildings = {}
 
+    """ CONSTANTS """
     START_ACRES = 50
     PERCENT_LAND_TO_TAKE = 0.1
     PERCENT_UNITS_SURVIVE = 0.9
@@ -22,8 +25,9 @@ class Player(object):
     DEFAULT_START_MANA = 100
     DEFAULT_GOLD_PER_TURN = 500
     DEFAULT_LUMBER_PER_TURN = 20
-    START_BUILDINGS = {GoldMine:10, LumberYard:10, Tower:10}
+    START_BUILDINGS = {GoldMine:20, LumberYard:10, Tower:10}
 
+    """Starting Values"""
     def __init__(self, name, race, num_units):
         self.name = name
         self.race = race
@@ -35,23 +39,26 @@ class Player(object):
         self.num_gold = self.START_GOLD
         self.num_gold_per_turn = self.DEFAULT_GOLD_PER_TURN
         self.num_lumber_per_turn = self.DEFAULT_LUMBER_PER_TURN
-        self.buildings = self.START_BUILDINGS
+        self.buildings = self.START_BUILDINGS.copy()
 
     def __str__(self):
         return self.name
 
+    """ For debugging, print all info about player"""
     def print_state(self):
         print '{}: {} {} {} acres, {} gold, {} lumber, {} buildings, {} mana, {} population'.format(
             self, self.num_units, self.race.unit.name,
             self.num_acres, self.num_gold, self.num_lumber, self.buildings,
             self.num_mana, self.num_population)
 
+    """ Attack player"""
     def attack(self, other_player):
         if (
             self.num_units * self.race.unit.attack >
             other_player.num_units * other_player.race.unit.defense
         ):
-            amount_to_take = other_player.num_acres * self.PERCENT_LAND_TO_TAKE
+            amount_to_take = int(round(other_player.num_acres * self.PERCENT_LAND_TO_TAKE))
+            other_player._reduce_buildings(amount_to_take)
             other_player.num_acres -= amount_to_take
             self.num_acres += amount_to_take
             print (
@@ -95,5 +102,20 @@ class Player(object):
         self.num_gold += GoldMine.GOLD_PER_TURN * self.buildings[GoldMine]
         self.num_lumber += LumberYard.LUMBER_PER_TURN * self.buildings[LumberYard]
         self.num_mana += Tower.MANA_PER_TURN * self.buildings[Tower]
-        self.num_population = min(max_population, round(self.num_population * 1.01))
+        self.num_population = min(max_population, int(round(self.num_population * 1.01)))
         
+    def _reduce_buildings(self, quantity):
+        total_loss = 0
+        for building, count in self.buildings.iteritems():
+            reduction = int(round(count / float(self.num_acres) * quantity))
+            total_loss += reduction
+            self.buildings[building] -= reduction
+
+        difference = quantity - total_loss
+        if difference == 0: return
+        
+        for x in range (0, difference):
+            self.buildings[random.choice(self.buildings.keys())] -= 1;
+
+
+
