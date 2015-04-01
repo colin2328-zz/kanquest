@@ -1,2 +1,2 @@
-# dominion
+# Kanquest
 Text based game
