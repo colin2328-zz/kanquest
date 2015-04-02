@@ -18,3 +18,6 @@ class Tower(Building):
 	lumber_cost = 20
 	gold_cost = 500
 	
+class Empty(Building):
+	lumber_cost = 0
+	gold_cost = 0

@@ -25,7 +25,7 @@ class Player(object):
     DEFAULT_START_MANA = 100
     DEFAULT_GOLD_PER_TURN = 500
     DEFAULT_LUMBER_PER_TURN = 20
-    START_BUILDINGS = {GoldMine:20, LumberYard:10, Tower:10}
+    START_BUILDINGS = {GoldMine:10, LumberYard:10, Tower:10, Empty:20}
 
     """Starting Values"""
     def __init__(self, name, race, num_units):
@@ -53,14 +53,17 @@ class Player(object):
 
     """ Attack player"""
     def attack(self, other_player):
+        ### Compare your offense to enemy defense
         if (
             self.num_units * self.race.unit.attack >
             other_player.num_units * other_player.race.unit.defense
         ):
+            ### Calculate amount of land to be taken, reduce enemy's buildings, reduce enemy's land, then add the same # of acres to your kingdom
             amount_to_take = int(round(other_player.num_acres * self.PERCENT_LAND_TO_TAKE))
             other_player._reduce_buildings(amount_to_take)
             other_player.num_acres -= amount_to_take
             self.num_acres += amount_to_take
+            self.buildings[Empty] += amount_to_take
             print (
                 '{} Successfully attacked {} and conquered {} acres'
                 ).format(self, other_player, amount_to_take)
@@ -71,6 +74,7 @@ class Player(object):
         other_player.num_units *= self.PERCENT_UNITS_SURVIVE
 
     def buy_units(self, num_units):
+        # Check to see if player has gold to purchase units, and complete transaction
         if self.num_gold < num_units*self.race.unit.cost:
             print ('{} does not have enough gold to make that purchase.'.format(self))
             return
@@ -103,9 +107,11 @@ class Player(object):
         self.num_lumber += LumberYard.LUMBER_PER_TURN * self.buildings[LumberYard]
         self.num_mana += Tower.MANA_PER_TURN * self.buildings[Tower]
         self.num_population = min(max_population, int(round(self.num_population * 1.01)))
-        
+    
+    """Called during a successful attack by player, makes sure that a player can't have more buildings than land"""
     def _reduce_buildings(self, quantity):
         total_loss = 0
+        # Calculate the %age of land made up by each building type, then divy up the lost land according to those %s
         for building, count in self.buildings.iteritems():
             reduction = int(round(count / float(self.num_acres) * quantity))
             total_loss += reduction
