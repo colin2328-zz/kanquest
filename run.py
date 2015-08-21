@@ -1,6 +1,5 @@
 from game.races import Human, Elf
-from game.player import Player
-from game.game import Game
+from game.models import Game, Player
 from game.buildings import GoldMine
 from game.spells import Fireball
 

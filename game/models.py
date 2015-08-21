@@ -1,8 +1,10 @@
 import random
 from django.db import models
 from django.core.validators import MinValueValidator
+from django.contrib.auth.models import User
 
 from .buildings import *
+from .races import RACE_CHOICES, RACE_HUMAN, RACES
 
 
 class Game(models.Model):
@@ -16,17 +18,7 @@ class Game(models.Model):
         print('\nOne turn has advanced:')
 
 
-class Player(models.Model):
-    name = models.CharField(max_length=100)
-    game = models.ForeignKey(Game)
-    # race = models.CharField(max_length=50) TODO: make into choices
-    num_population = models.IntegerField(default=0, validators=[MinValueValidator(0)])
-    num_mana = models.IntegerField(default=0, validators=[MinValueValidator(0)])
-    num_units = models.IntegerField(default=0, validators=[MinValueValidator(0)])
-    num_acres = models.IntegerField(default=0, validators=[MinValueValidator(0)])
-    num_lumber = models.IntegerField(default=0, validators=[MinValueValidator(0)])
-    num_gold = models.IntegerField(default=0, validators=[MinValueValidator(0)])
-
+class Player(User):
     buildings = {}  # TODO make into model
 
     # Constants
@@ -35,14 +27,28 @@ class Player(models.Model):
     PERCENT_UNITS_SURVIVE = 0.9
     START_GOLD = 10000
     START_LUMBER = 100
-    DEFAULT_POPULATION = 5 * START_ACRES
-    DEFAULT_START_MANA = 100
+    START_POPULATION = 5 * START_ACRES
+    START_MANA = 100
+    START_UNITS = 200
     DEFAULT_GOLD_PER_TURN = 500
     DEFAULT_LUMBER_PER_TURN = 20
     START_BUILDINGS = {GoldMine: 10, LumberYard: 10, Tower: 10, Empty: 20}
 
-    def __str__(self):
-        return self.name
+    game = models.ForeignKey(Game)
+    race_choice = models.SmallIntegerField(choices=RACE_CHOICES, default=RACE_HUMAN)
+    num_population = models.IntegerField(default=START_POPULATION, validators=[MinValueValidator(0)])
+    num_mana = models.IntegerField(default=START_MANA, validators=[MinValueValidator(0)])
+    num_units = models.IntegerField(default=START_UNITS, validators=[MinValueValidator(0)])
+    num_acres = models.IntegerField(default=START_ACRES, validators=[MinValueValidator(0)])
+    num_lumber = models.IntegerField(default=START_LUMBER, validators=[MinValueValidator(0)])
+    num_gold = models.IntegerField(default=START_GOLD, validators=[MinValueValidator(0)])
+
+    def __unicode__(self):
+        return self.username
+
+    @property
+    def race(self):
+        return RACES[self.race_choice]
 
     def print_state(self):
         """ For debugging, print all info about player"""
