@@ -1,12 +1,7 @@
-from factory import Sequence, SubFactory
+from factory import Sequence
 from factory.django import DjangoModelFactory
 
-from .models import Game, Player
-
-
-class GameFactory(DjangoModelFactory):
-    class Meta:
-        model = Game
+from .models import Player
 
 
 class PlayerFactory(DjangoModelFactory):
@@ -14,4 +9,3 @@ class PlayerFactory(DjangoModelFactory):
         model = Player
 
     username = Sequence(lambda n: "Agent %03d" % n)
-    game = SubFactory(GameFactory)

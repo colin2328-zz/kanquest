@@ -5,17 +5,7 @@ from django.contrib.auth.models import User
 
 from .buildings import *
 from .races import RACE_CHOICES, RACE_HUMAN, RACES
-
-
-class Game(models.Model):
-    turn_count = models.IntegerField(default=0, validators=[MinValueValidator(0)])
-
-    def take_turn(self):
-        self.turn_count += 1
-        self.save()
-        for player in self.players:
-            player.take_turn()
-        print('\nOne turn has advanced:')
+from .exceptions import NotEnoughGoldException
 
 
 class Player(User):
@@ -34,7 +24,6 @@ class Player(User):
     DEFAULT_LUMBER_PER_TURN = 20
     START_BUILDINGS = {GoldMine: 10, LumberYard: 10, Tower: 10, Empty: 20}
 
-    game = models.ForeignKey(Game)
     race_choice = models.SmallIntegerField(choices=RACE_CHOICES, default=RACE_HUMAN)
     num_population = models.IntegerField(default=START_POPULATION, validators=[MinValueValidator(0)])
     num_mana = models.IntegerField(default=START_MANA, validators=[MinValueValidator(0)])
@@ -50,15 +39,15 @@ class Player(User):
     def race(self):
         return RACES[self.race_choice]
 
-    def print_state(self):
-        """ For debugging, print all info about player"""
-        print '{}: {} {} {} acres, {} gold, {} lumber, {} buildings, {} mana, {} population'.format(
+    def state(self):
+        """ For debugging, return all info about player"""
+        return '{}: {} {} {} acres, {} gold, {} lumber, {} buildings, {} mana, {} population'.format(
             self, self.num_units, self.race.unit.name,
             self.num_acres, self.num_gold, self.num_lumber, self.buildings,
             self.num_mana, self.num_population)
 
     def attack(self, other_player):
-        """ Attack player other_player"""
+        """Attack player other_player"""
         # Compare your offense to enemy defense
         if (
             self.num_units * self.race.unit.attack >
@@ -74,7 +63,7 @@ class Player(User):
                 '{} Successfully attacked {} and conquered {} acres'
                 ).format(self, other_player, amount_to_take)
         else:
-            print '{} Failed to attack {}'.format(self, other_player)
+            print('{} Failed to attack {}'.format(self, other_player))
 
         self.num_units *= self.PERCENT_UNITS_SURVIVE
         other_player.num_units *= self.PERCENT_UNITS_SURVIVE
@@ -82,10 +71,8 @@ class Player(User):
         other_player.save()
 
     def buy_units(self, num_units):
-        # Check to see if player has gold to purchase units, and complete transaction
         if self.num_gold < num_units*self.race.unit.cost:
-            print('{} does not have enough gold to make that purchase.'.format(self))
-            return
+            raise NotEnoughGoldException()
 
         self.num_gold -= num_units*self.race.unit.cost
         self.num_units += num_units
@@ -95,20 +82,21 @@ class Player(User):
         """Build entered quantity of select building type"""
 
         # check to make sure that we have enough resources
-        if self.num_gold < quantity*building_type.gold_cost or self.num_lumber < quantity*building_type.lumber_cost:
-            print('{} does not have enough resources to make that purchase.'.format(self))
-            return
+        if self.num_gold < quantity*building_type.gold_cost:
+            raise NotEnoughGoldException()
+
+        if self.num_lumber < quantity*building_type.lumber_cost:
+            raise NotEnoughLumberException()
         if (sum(self.buildings.values()) + quantity) > self.num_acres:
-            print('{} does not have enough land to build {} buildings'.format(self, quantity))
-            return
+            raise NotEnoughLandException
+
         self.buildings[building_type] += quantity
         self.save()
 
     def cast(self, spell, target):
         """Cast spell on target"""
         if self.num_mana < spell.mana_cost:
-            print('{} does not have enough mana to cast {}'.format(self), spell)
-            return 
+            raise NotEnoughManaException()
         self.num_mana -= spell.mana_cost
         spell.cast(target)
         print('{} casts {} on {}').format(self, spell, target)
