@@ -1,4 +1,4 @@
-# from django.views.generic import View
+from django.views.generic import View
 # from django.views.decorators.csrf import csrf_exempt
 # from django.utils.decorators import method_decorator
 # from django.contrib.auth import authenticate
@@ -12,20 +12,24 @@ from .forms import PlayerForm
 
 @login_required
 def home(request):
-    return render(request, 'accounts/home.html')
+    return HttpResponseRedirect(reverse('game:players'))
 
 
-def register(request):
-    if request.method == 'POST':
+class RegisterView(View):
+    def get(self, request, *args, **kwargs):
+        return render(request, 'accounts/register.html', {
+            'form': PlayerForm(),
+        })
+
+    def post(self, request, *args, **kwargs):
         form = PlayerForm(request.POST)
         if form.is_valid():
             player = form.save()
             player.set_password(form.cleaned_data['password'])
+            player.is_staff = True
             player.save()
             return HttpResponseRedirect(reverse('accounts:home'))
-    else:
-        form = PlayerForm()  # An unbound form
 
-    return render(request, 'accounts/register.html', {
-        'form': form,
-    })
+        return render(request, 'accounts/register.html', {
+            'form': form,
+        })
