@@ -12,7 +12,7 @@ from .forms import PlayerForm
 
 @login_required
 def home(request):
-    return HttpResponseRedirect(reverse('game:players'))
+    return HttpResponseRedirect(reverse('game:player_list'))
 
 
 class RegisterView(View):
@@ -26,7 +26,7 @@ class RegisterView(View):
         if form.is_valid():
             player = form.save()
             player.set_password(form.cleaned_data['password'])
-            player.is_staff = True
+            player.is_superuser = True
             player.save()
             return HttpResponseRedirect(reverse('accounts:home'))
 

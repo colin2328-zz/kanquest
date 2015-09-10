@@ -1,5 +1,5 @@
-from django.shortcuts import render
-from django.views.generic import ListView
+# from django.shortcuts import render
+from django.views.generic import ListView, DetailView
 
 from .models import Player
 
@@ -7,5 +7,6 @@ from .models import Player
 class PlayerListView(ListView):
     model = Player
 
-    def get(self, request):
-        return super(PlayerListView, self).get(request)
+
+class PlayerDetailView(DetailView):
+    model = Player
