@@ -1,1 +1,15 @@
+{% extends 'game/base.html' %}
+{% block content %}
 {{ player.state }}
+
+<script>
+    var url = "{% url 'api:player-action' pk=player.id %}";
+    $.post(
+        url,
+        {'action': 'attack'},
+        function(data) {
+            console.log(data);
+        });
+</script>
+
+{% endblock %}

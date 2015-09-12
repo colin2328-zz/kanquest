@@ -12,6 +12,7 @@ class PlayerViewSet(ReadOnlyModelViewSet):
 
     @detail_route(methods=['post'])
     def action(self, request, pk=None):
-        # player = self.get_object()
+        player = self.get_object()
+        action = request.data.get('action')
         # import ipdb; ipdb.set_trace()
-        return Response()
+        return Response(request.data)
