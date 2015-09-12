@@ -4,6 +4,7 @@ from rest_framework.response import Response
 
 from game.models import Player
 from .serializers import PlayerSerializer
+from .actions import Action
 
 
 class PlayerViewSet(ReadOnlyModelViewSet):
@@ -14,5 +15,5 @@ class PlayerViewSet(ReadOnlyModelViewSet):
     def action(self, request, pk=None):
         player = self.get_object()
         action = request.data.get('action')
-        # import ipdb; ipdb.set_trace()
-        return Response(request.data)
+        result = getattr(Action(player, request.data), action)()
+        return Response(result)

@@ -4,12 +4,18 @@
 
 <script>
     var url = "{% url 'api:player-action' pk=player.id %}";
-    $.post(
-        url,
-        {'action': 'attack'},
-        function(data) {
-            console.log(data);
-        });
+    function attack() {
+        $.post(
+            url,
+            {
+                'action': 'attack',
+                'target': 2,
+            },
+            function(data) {
+                console.log(data);
+            });
+    }
 </script>
+<button onclick="attack()">attack</button>
 
 {% endblock %}

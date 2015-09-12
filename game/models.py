@@ -78,6 +78,10 @@ class Player(User):
         self.num_units += num_units
         self.save()
 
+    def explore(self):
+        """To implement"""
+        pass
+
     def build(self, building_type, quantity):
         """Build entered quantity of select building type"""
 
