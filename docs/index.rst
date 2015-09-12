@@ -12,6 +12,7 @@ Contents:
    :maxdepth: 2
 
    game
+   api
 
 
 Indices and tables

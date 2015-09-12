@@ -1,14 +1,22 @@
-class NotEnoughGoldException(Exception):
+class GameException(Exception):
+    message = 'In Game Exception'
+
+
+class NotEnoughGoldException(GameException):
     message = 'Not enough gold'
 
 
-class NotEnoughLumberException(Exception):
+class NotEnoughLumberException(GameException):
     message = 'Not enough lumber'
 
 
-class NotEnoughLandException(Exception):
+class NotEnoughLandException(GameException):
     message = 'Not enough land'
 
 
-class NotEnoughManaException(Exception):
+class NotEnoughManaException(GameException):
     message = 'Not enough mana'
+
+
+class AttackFailedException(GameException):
+    message = 'Attack failed'

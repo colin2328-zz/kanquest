@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 
 from .buildings import *
 from .races import RACE_CHOICES, RACE_HUMAN, RACES
-from .exceptions import NotEnoughGoldException
+from .exceptions import NotEnoughGoldException, AttackFailedException
 
 
 class Player(User):
@@ -50,20 +50,19 @@ class Player(User):
         """Attack player other_player"""
         # Compare your offense to enemy defense
         if (
-            self.num_units * self.race.unit.attack >
+            self.num_units * self.race.unit.attack <=
             other_player.num_units * other_player.race.unit.defense
         ):
-            # Calculate amount of land to be taken, reduce enemy's buildings, reduce enemy's land, then add the same # of acres to your kingdom
-            amount_to_take = int(round(other_player.num_acres * self.PERCENT_LAND_TO_TAKE))
-            other_player._reduce_buildings(amount_to_take)
-            other_player.num_acres -= amount_to_take
-            self.num_acres += amount_to_take
-            self.buildings[Empty] += amount_to_take
-            print(
-                '{} Successfully attacked {} and conquered {} acres'
-                ).format(self, other_player, amount_to_take)
-        else:
-            print('{} Failed to attack {}'.format(self, other_player))
+            raise AttackFailedException()
+        # Calculate amount of land to be taken, reduce enemy's buildings, reduce enemy's land, then add the same # of acres to your kingdom
+        amount_to_take = int(round(other_player.num_acres * self.PERCENT_LAND_TO_TAKE))
+        other_player._reduce_buildings(amount_to_take)
+        other_player.num_acres -= amount_to_take
+        self.num_acres += amount_to_take
+        self.buildings[Empty] += amount_to_take
+        return (
+            '{} Successfully attacked {} and conquered {} acres'
+            ).format(self, other_player, amount_to_take)
 
         self.num_units *= self.PERCENT_UNITS_SURVIVE
         other_player.num_units *= self.PERCENT_UNITS_SURVIVE
@@ -83,7 +82,8 @@ class Player(User):
         pass
 
     def build(self, building_type, quantity):
-        """Build entered quantity of select building type"""
+        """Build entered quantity of select building type
+        TODO: Actually deduct resources"""
 
         # check to make sure that we have enough resources
         if self.num_gold < quantity*building_type.gold_cost:
