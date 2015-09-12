@@ -11,11 +11,9 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
+        migrations.AlterField(
             model_name='player',
-            name='game',
-        ),
-        migrations.DeleteModel(
-            name='Game',
+            name='race_choice',
+            field=models.CharField(default=b'HUM', max_length=3, choices=[(b'HUM', b'Human'), (b'ELF', b'Elf')]),
         ),
     ]

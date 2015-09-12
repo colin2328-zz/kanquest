@@ -24,7 +24,7 @@ class Player(User):
     DEFAULT_LUMBER_PER_TURN = 20
     START_BUILDINGS = {GoldMine: 10, LumberYard: 10, Tower: 10, Empty: 20}
 
-    race_choice = models.SmallIntegerField(choices=RACE_CHOICES, default=RACE_HUMAN)
+    race_choice = models.CharField(choices=RACE_CHOICES, max_length=3, default=RACE_HUMAN)
     num_population = models.IntegerField(default=START_POPULATION, validators=[MinValueValidator(0)])
     num_mana = models.IntegerField(default=START_MANA, validators=[MinValueValidator(0)])
     num_units = models.IntegerField(default=START_UNITS, validators=[MinValueValidator(0)])

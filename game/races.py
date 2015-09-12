@@ -1,7 +1,7 @@
 from units import Knight, Ranger
 
-RACE_HUMAN = 1
-RACE_ELF = 2
+RACE_HUMAN = 'HUM'
+RACE_ELF = 'ELF'
 # RACE_DARKELF = 3
 # RACE_DWARF = 4
 RACE_CHOICES = (
