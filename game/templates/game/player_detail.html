@@ -4,18 +4,22 @@
 
 <script>
     var url = "{% url 'api:player-action' pk=player.id %}";
-    function attack() {
+    function take_action(action, extra_data) {
         $.post(
             url,
-            {
-                'action': 'attack',
-                'target': 2,
-            },
+            $.extend({}, {'action': action}, extra_data),
             function(data) {
                 console.log(data);
             });
+    };
+    function attack() {
+        take_action('attack', {'target': 2});
+    };
+    function buy_units() {
+        take_action('buy_units', {'quantity': 10});
     }
 </script>
 <button onclick="attack()">attack</button>
+<button onclick="buy_units()">buy units</button>
 
 {% endblock %}

@@ -22,8 +22,12 @@ class Action(object):
 
     def build(self):
         building_type = self.data.get('building_type')
-        quantity = self.data.get('quantity')
+        quantity = int(self.data.get('quantity'))
         return self.player.build(building_type, quantity)
+
+    def buy_units(self):
+        quantity = int(self.data.get('quantity'))
+        return self.player.buy_units(quantity)
 
     def cast(self):
         spell = self.data.get('spell')
