@@ -1,7 +1,7 @@
 import random
 from django.db import models
-from django.core.validators import MinValueValidator
 from django.contrib.auth.models import User
+from annoying.fields import AutoOneToOneField
 
 from .buildings import *
 from .races import RACE_CHOICES, RACE_HUMAN, RACES
@@ -9,7 +9,6 @@ from .exceptions import NotEnoughGoldException, AttackFailedException
 
 
 class Player(User):
-    buildings = {}  # TODO make into model
 
     # Constants
     START_ACRES = 50
@@ -22,15 +21,14 @@ class Player(User):
     START_UNITS = 200
     DEFAULT_GOLD_PER_TURN = 500
     DEFAULT_LUMBER_PER_TURN = 20
-    START_BUILDINGS = {GoldMine: 10, LumberYard: 10, Tower: 10, Empty: 20}
 
     race_choice = models.CharField(choices=RACE_CHOICES, max_length=3, default=RACE_HUMAN)
-    num_population = models.IntegerField(default=START_POPULATION, validators=[MinValueValidator(0)])
-    num_mana = models.IntegerField(default=START_MANA, validators=[MinValueValidator(0)])
-    num_units = models.IntegerField(default=START_UNITS, validators=[MinValueValidator(0)])
-    num_acres = models.IntegerField(default=START_ACRES, validators=[MinValueValidator(0)])
-    num_lumber = models.IntegerField(default=START_LUMBER, validators=[MinValueValidator(0)])
-    num_gold = models.IntegerField(default=START_GOLD, validators=[MinValueValidator(0)])
+    num_population = models.PositiveIntegerField(default=START_POPULATION)
+    num_mana = models.PositiveIntegerField(default=START_MANA)
+    num_units = models.PositiveIntegerField(default=START_UNITS)
+    num_acres = models.PositiveIntegerField(default=START_ACRES)
+    num_lumber = models.PositiveIntegerField(default=START_LUMBER)
+    num_gold = models.PositiveIntegerField(default=START_GOLD)
 
     def __unicode__(self):
         return self.username
@@ -49,25 +47,24 @@ class Player(User):
     def attack(self, other_player):
         """Attack player other_player"""
         # Compare your offense to enemy defense
-        if (
+        failed = (
             self.num_units * self.race.unit.attack <=
             other_player.num_units * other_player.race.unit.defense
-        ):
-            raise AttackFailedException()
-        # Calculate amount of land to be taken, reduce enemy's buildings, reduce enemy's land, then add the same # of acres to your kingdom
-        amount_to_take = int(round(other_player.num_acres * self.PERCENT_LAND_TO_TAKE))
-        other_player._reduce_buildings(amount_to_take)
-        other_player.num_acres -= amount_to_take
-        self.num_acres += amount_to_take
-        self.buildings[Empty] += amount_to_take
-        return (
-            '{} Successfully attacked {} and conquered {} acres'
-            ).format(self, other_player, amount_to_take)
-
+        )
         self.num_units *= self.PERCENT_UNITS_SURVIVE
         other_player.num_units *= self.PERCENT_UNITS_SURVIVE
         self.save()
         other_player.save()
+        if failed:
+            raise AttackFailedException()
+        # Calculate amount of land to be taken, reduce enemy's buildings, reduce enemy's land, then add the same # of acres to your kingdom
+        amount_to_take = int(round(other_player.num_acres * self.PERCENT_LAND_TO_TAKE))
+        other_player._reduce_buildings(amount_to_take)
+        self.num_acres += amount_to_take
+        self.save()
+        return (
+            '{} Successfully attacked {} and conquered {} acres'
+            ).format(self, other_player, amount_to_take)
 
     def buy_units(self, num_units):
         if self.num_gold < num_units*self.race.unit.cost:
@@ -118,17 +115,42 @@ class Player(User):
     def _reduce_buildings(self, quantity):
         """Called during a successful attack by player, makes sure that a player can't have more buildings than land"""
         total_loss = 0
+        percent_to_take = quantity / float(self.num_acres)
+        empty_reduction = int(round(self.buildings.num_empty * percent_to_take))
+        total_loss += empty_reduction
+        self.num_acres -= quantity
         # Calculate the %age of land made up by each building type, then divy up the lost land according to those %s
-        for building, count in self.buildings.iteritems():
-            reduction = int(round(count / float(self.num_acres) * quantity))
+        for field in self.buildings.get_building_fields():
+            count = getattr(self.buildings, field)
+            reduction = int(round(count * percent_to_take))
             total_loss += reduction
-            self.buildings[building] -= reduction
+            setattr(self.buildings, field, count - reduction)
 
-        # Is there a difference between the land lost and number of buildings lost due to rounding errors?
+        # difference between the land lost and number of buildings lost due to rounding errors?
         difference = quantity - total_loss
-        if difference == 0:
-            return
 
         # If there is, remove buildings at random until the discrepancy no longer exists.
+        # take from empty
+        difference -= max(0, self.buildings.num_empty)
         for x in range(0, difference):
-            self.buildings[random.choice(self.buildings.keys())] -= 1
+            field = random.choice(self.buildings.get_building_fields())
+            count = getattr(self.buildings, field)
+            setattr(self.buildings, field, count - 1)
+        self.save()
+
+
+class Buildings(models.Model):
+    player = AutoOneToOneField(Player, primary_key=True)
+
+    num_gold_mines = models.PositiveIntegerField(default=10)
+    num_lumber_yards = models.PositiveIntegerField(default=10)
+    num_towers = models.PositiveIntegerField(default=10)
+
+    @property
+    def num_empty(self):
+        fields = self.get_building_fields()
+        return self.player.num_acres - sum([getattr(self, field) for field in fields])
+
+    def get_building_fields(self):
+        fields = self._meta.get_all_field_names()
+        return [field for field in fields if 'num_' in field]
