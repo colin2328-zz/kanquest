@@ -3,9 +3,12 @@ from django.db import models
 from django.contrib.auth.models import User
 from annoying.fields import AutoOneToOneField
 
-from .buildings import *
+from .buildings import GoldMine, LumberYard, Tower
 from .races import RACE_CHOICES, RACE_HUMAN, RACES
-from .exceptions import NotEnoughGoldException, AttackFailedException
+from .exceptions import (
+    NotEnoughGoldException, AttackFailedException, NotEnoughLumberException,
+    NotEnoughManaException, NotEnoughLandException
+)
 
 
 class Player(User):
@@ -21,6 +24,7 @@ class Player(User):
     START_UNITS = 200
     DEFAULT_GOLD_PER_TURN = 500
     DEFAULT_LUMBER_PER_TURN = 20
+    EXPLORE_GOLD_COST_PER_ACRE = 100
 
     race_choice = models.CharField(choices=RACE_CHOICES, max_length=3, default=RACE_HUMAN)
     num_population = models.PositiveIntegerField(default=START_POPULATION)
@@ -74,13 +78,16 @@ class Player(User):
         self.num_units += num_units
         self.save()
 
-    def explore(self):
-        """To implement"""
-        pass
+    def explore(self, quantity):
+        if self.num_gold < quantity * self.EXPLORE_GOLD_COST_PER_ACRE:
+            raise NotEnoughGoldException()
+
+        self.num_gold -= quantity * self.EXPLORE_GOLD_COST_PER_ACRE
+        self.num_acres += quantity
+        self.save()
 
     def build(self, building_type, quantity):
-        """Build entered quantity of select building type
-        TODO: Actually deduct resources"""
+        """Build entered quantity of select building type"""
 
         # check to make sure that we have enough resources
         if self.num_gold < quantity*building_type.gold_cost:
@@ -88,10 +95,13 @@ class Player(User):
 
         if self.num_lumber < quantity*building_type.lumber_cost:
             raise NotEnoughLumberException()
-        if (sum(self.buildings.values()) + quantity) > self.num_acres:
+        if self.buildings.num_empty < quantity:
             raise NotEnoughLandException
 
-        self.buildings[building_type] += quantity
+        field = building_type().get_field_name()
+        setattr(self.buildings, field, getattr(self.buildings, field) + quantity)
+        self.num_gold -= quantity*building_type.gold_cost
+        self.num_lumber -= quantity*building_type.lumber_cost
         self.save()
 
     def cast(self, spell, target):
@@ -106,9 +116,9 @@ class Player(User):
     def take_turn(self):
         """Only called by game.py"""
         max_population = 10 * self.num_acres
-        self.num_gold += GoldMine.GOLD_PER_TURN * self.buildings[GoldMine]
-        self.num_lumber += LumberYard.LUMBER_PER_TURN * self.buildings[LumberYard]
-        self.num_mana += Tower.MANA_PER_TURN * self.buildings[Tower]
+        self.num_gold += GoldMine.GOLD_PER_TURN * self.buildings.num_gold_mines
+        self.num_lumber += LumberYard.LUMBER_PER_TURN * self.buildings.num_lumber_yards
+        self.num_mana += Tower.MANA_PER_TURN * self.buildings.num_towers
         self.num_population = min(max_population, int(round(self.num_population * 1.01)))
         self.save()
 
@@ -140,11 +150,12 @@ class Player(User):
 
 
 class Buildings(models.Model):
+    START_BUILDING_COUNT = 10
     player = AutoOneToOneField(Player, primary_key=True)
 
-    num_gold_mines = models.PositiveIntegerField(default=10)
-    num_lumber_yards = models.PositiveIntegerField(default=10)
-    num_towers = models.PositiveIntegerField(default=10)
+    num_gold_mines = models.PositiveIntegerField(default=START_BUILDING_COUNT)
+    num_lumber_yards = models.PositiveIntegerField(default=START_BUILDING_COUNT)
+    num_towers = models.PositiveIntegerField(default=START_BUILDING_COUNT)
 
     @property
     def num_empty(self):
