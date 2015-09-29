@@ -1,14 +1,12 @@
-from units import Knight, Ranger
+from units import Knight, Ranger, Adept
 
 RACE_HUMAN = 'HUM'
 RACE_ELF = 'ELF'
-# RACE_DARKELF = 3
-# RACE_DWARF = 4
+RACE_DARKELF = 'DEF'
 RACE_CHOICES = (
     (RACE_HUMAN, 'Human'),
     (RACE_ELF, 'Elf'),
-    # (RACE_DARKELF, 'Dark Elf'),
-    # (RACE_DWARF, 'Dwarf'),
+    (RACE_DARKELF, 'Dark Elf'),
 )
 
 
@@ -23,10 +21,13 @@ class Human(Race):
 class Elf(Race):
     unit = Ranger
 
-# class DarkElf(Race):
-#     unit = Adept
+
+class DarkElf(Race):
+    unit = Adept
+
 
 RACES = {
     RACE_HUMAN: Human(),
     RACE_ELF: Elf(),
+    RACE_DARKELF: DarkElf()
 }
