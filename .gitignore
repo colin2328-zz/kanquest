@@ -1,1 +1,7 @@
+<<<<<<< HEAD
 *.pyc
+=======
+*.pyc
+*.sublime-workspace
+docs/_build
+>>>>>>> 0f14a96058f415ec5497ef427dda7f189735cb98

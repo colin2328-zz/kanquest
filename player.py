@@ -94,6 +94,7 @@ class Player(object):
             print ('{} does not have enough land to build {} buildings'.format(self, quantity))
             return
         self.buildings[building_type] += quantity
+        self.buildings[Empty] -= quantity
 
     def cast(self, spell, target):
         """Cast spell on target"""
@@ -105,7 +106,7 @@ class Player(object):
         print ('{} casts {} on {}').format(self, spell, target)
 
     def take_turn(self):
-        """Only called by game.py"""
+        """Update max pop based on land, add resources to all players. Only called by game.py"""
         max_population = 10 * self.num_acres
         self.num_gold += GoldMine.GOLD_PER_TURN * self.buildings[GoldMine]
         self.num_lumber += LumberYard.LUMBER_PER_TURN * self.buildings[LumberYard]
